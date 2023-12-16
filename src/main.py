@@ -1,6 +1,5 @@
 import logging
 import re
-from collections import defaultdict
 
 from urllib.parse import urljoin
 import requests_cache
@@ -9,10 +8,11 @@ from tqdm import tqdm
 from constants import BASE_DIR, MAIN_DOC_URL, PEP_URL, EXPECTED_STATUS
 from configs import configure_argument_parser, configure_logging
 from outputs import control_output
-from utils import get_response, find_tag
+from utils import get_response, find_tag, get_soup
 
 
 def whats_new(session):
+    """Парсер информации из статей о нововведениях в Python."""
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
     response = get_response(session, whats_new_url)
     soup = BeautifulSoup(response.text, 'lxml')
@@ -43,6 +43,7 @@ def whats_new(session):
 
 
 def latest_versions(session):
+    """Парсер статусов версий Python."""
     response = get_response(session, MAIN_DOC_URL)
     soup = BeautifulSoup(response.text, 'lxml')
     sidebar = find_tag(soup, 'div', {'class': 'sphinxsidebarwrapper'})
@@ -72,6 +73,7 @@ def latest_versions(session):
 
 
 def download(session):
+    """Парсер, который скачивает архив документации Python."""
     downloads_url = urljoin(MAIN_DOC_URL, 'download.html')
     response = get_response(session, downloads_url)
     soup = BeautifulSoup(response.text, 'lxml')
@@ -94,39 +96,38 @@ def download(session):
 
 
 def pep(session):
-    response = get_response(session, PEP_URL)
-    soup = BeautifulSoup(response.text, 'lxml')
+    """Парсинг документов PEP."""
+    soup = get_soup(session, PEP_URL)
     main_tag = find_tag(soup, 'section', {'id': 'numerical-index'})
-    peps_row = main_tag.find_all('tr')
-    count_status_in_card = defaultdict(int)
+    tbody_tag = find_tag(main_tag, 'tbody')
+    peps_row = tbody_tag.find_all('tr')
+    status_sum = {}
+    total_peps = 0
     result = [('Статус', 'Количество')]
-    for i in range(1, len(peps_row)):
-        pep_href_tag = peps_row[i].a['href']
-        pep_link = urljoin(PEP_URL, pep_href_tag)
-        response = get_response(session, pep_link)
-        soup = BeautifulSoup(response.text, 'lxml')
-        main_card_tag = find_tag(soup, 'section', {'id': 'pep-content'})
-        main_card_dl_tag = find_tag(main_card_tag, 'dl',
-                                    {'class': 'rfc2822 field-list simple'})
-        for tag in main_card_dl_tag:
-            if tag.name == 'dt' and tag.text == 'Status:':
-                card_status = tag.next_sibling.next_sibling.string
-                count_status_in_card[card_status] = count_status_in_card.get(
-                    card_status, 0) + 1
-                if len(peps_row[i].td.text) != 1:
-                    table_status = peps_row[i].td.text[1:]
-                    if card_status[0] != table_status:
-                        logging.info(
-                            '\n'
-                            'Несовпадающие статусы:\n'
-                            f'{pep_link}\n'
-                            f'Статус в карточке: {card_status}\n'
-                            f'Ожидаемые статусы: '
-                            f'{EXPECTED_STATUS[table_status]}\n'
-                                )
-    for key in count_status_in_card:
-        result.append((key, str(count_status_in_card[key])))
-    result.append(('Total', len(peps_row)-1))
+    for i in peps_row:
+        total_peps += 1
+        data = list(find_tag(i, 'abbr').text)
+        preview_status = data[1:][0] if len(data) > 1 else ''
+        url = urljoin(PEP_URL, find_tag(i, 'a', attrs={
+            'class': 'pep reference internal'})['href'])
+        soup = get_soup(session, url)
+        table_info = find_tag(soup, 'dl',
+                              attrs={'class': 'rfc2822 field-list simple'})
+        status_pep_page = table_info.find(
+            string='Status').parent.find_next_sibling('dd').string
+        if status_pep_page in status_sum:
+            status_sum[status_pep_page] += 1
+        if status_pep_page not in status_sum:
+            status_sum[status_pep_page] = 1
+        if status_pep_page not in EXPECTED_STATUS[preview_status]:
+            error_message = (f'Несовпадающие статусы:\n'
+                             f'{url}\n'
+                             f'Статус в карточке: {status_pep_page}\n'
+                             f'Ожидаемые статусы: '
+                             f'{EXPECTED_STATUS[preview_status]}')
+            logging.warning(error_message)
+    result.extend(status_sum.items())
+    result.append(('Total', total_peps))
     return result
 
 
