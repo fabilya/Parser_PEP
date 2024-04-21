@@ -1,73 +1,51 @@
-Парсер информации о python с `https://docs.python.org/3/` и `https://peps.python.org/`
+# Проект парсинга PEP
+## Contents
+- [Description](#description)
+- [Technologies](#technologies)
+- [Start project](#how-to-start-a-project)
+    - [Built-in methods](#built-in-methods)
+    - [Arguments](#arguments)
+- [Author](#author)
+### Description
+The parser collects data about all PEP documents, compares statuses and writes them to a file, it also collects information about the status of versions, downloads an archive with documentation and collects links about news in Python, logs its work and errors into the command line and a log file.
+Before use
+### Technologies
+- Python 
+- BeautifulSoup4
+- Prettytable
 
-Перед использованием
+### How to start a project
+- Clone the repository to your computer using the commands:
+```
+git clone git@github.com:fabilya/bs4_parser_pep.git
+```
+- In the root folder, create a virtual environment and install dependencies.
+```
+python -m venv venv
+pip install -r requirements.txt
+```
+- Change the directory to the src/ folder
+- Run the main.py file by selecting the required parser and arguments (given below)
 
-Клонируйте репозиторий к себе на компьютер при помощи команд:
+`python main.py [parser option] [arguments]`
 
-```git clone https://github.com/fabilya/bs4_parser_pep.git```
+### Built-in methods
 
-или
+`whats-new` - parser that displays a list of changes in python.
+`latest_versions` -a parser that displays a list of python versions and links to their documentation.
+`download` - parser downloading a zip archive with python documentation in pdf format.
+`pep` - a parser that displays a list of pep document statuses and the number of documents in each status.
 
-```git clone git@github.com:fabilya/bs4_parser_pep.git```
+### Arguments
+It is possible to specify arguments to change the operation of the program:
 
-или
-
-```git clone gh repo clone fabilya/bs4_parser_pep```
-
-В корневой папке нужно создать виртуальное окружение и установить зависимости.
-
-```python -m venv venv```
-
-```pip install -r requirements.txt```
-
-смените директорию на папку ./src/
-
-``cd src/``
-
-запустите файл main.py выбрав необходимый парсер и аргументы(приведены ниже)
-
-`python main.py [вариант парсера] [аргументы]`
-
-Встроенные парсеры
-
-whats-new
-
-Парсер выводящий спсок изменений в python.
-
-`python main.py whats-new [аргументы]`
-
-latest_versions Парсер выводящий список версий python и ссылки на их документацию.
-
-`python main.py latest-versions [аргументы]`
-
-download
-
-Парсер скачивающий zip архив с документацией python в pdf формате.
-
-`python main.py download [аргументы]`
-
-pep Парсер выводящий список статусов документов pep и количество документов в каждом статусе.
-
-`python main.py pep [аргументы]`
-
-Аргументы
-
-Есть возможность указывать аргументы для изменения работы программы:
-
-`-h, --help` Общая информация о командах.
-
+`-h, --help` - general information about commands
 `python main.py -h`
+`-c, --clear-cache` - clearing the cache before parsing
+`-o {pretty,file}, --output {pretty,file}` - additional data output methods
+`pretty` - displays data on the command line in a table
+`file` - saves information in csv format in the results/ folder
 
-`-c, --clear-cache` Очистка кеша перед выполнением парсинга.
+### Author
+[Ilya Fabiyanskiy](https://github.com/fabilya)
 
-`python main.py [вариант парсера] -c`
-
-`-o {pretty,file}, --output {pretty,file}`
-
-Дополнительные способы вывода данных
-
-`pretty` - выводит данные в командной строке в таблице
-
-`file` - сохраняет информацию в формате csv в папке ./results/
-
-`python main.py [вариант парсера] -o file`
