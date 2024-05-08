@@ -1,4 +1,4 @@
-# Проект парсинга PEP
+# Project parsing PEP
 ## Contents
 - [Description](#description)
 - [Technologies](#technologies)
